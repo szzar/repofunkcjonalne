@@ -1,5 +1,6 @@
 from src.models import Apartment, Bill, Parameters, Tenant, TenantSettlement, Transfer, ApartmentSettlement
-from typing import List, Tuple
+from typing import List, Tuple, Dict
+import math
 
 class Manager:
     def __init__(self, parameters: Parameters):
@@ -70,5 +71,20 @@ class Manager:
                 total_due_pln=apartment_settlement.total_due_pln / len(tenants_in_apartment)
             )
         for tenant in tenants_in_apartment ] 
+    
+    def check_deposits(self):
+        deposit_stat = {}
+
+        for tenant_id, tenant in self.tenants.items():
+            paid_deposit = 0
+            for transfer in self.transfers:
+                if transfer.tenant == tenant.name:
+                    if transfer.settlement_year is None and transfer.settlement_month is None:
+                        paid_deposit += transfer.amount_pln
+
+            fully_paid = math.isclose(paid_deposit, tenant.deposit_pln, abs_tol=0.01)
+            deposit_stat[tenant_id] = fully_paid
+
+        return deposit_stat
     
     
