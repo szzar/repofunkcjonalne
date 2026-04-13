@@ -1,6 +1,6 @@
 from src.manager import Manager
 from src.models import Parameters
-
+import sys
 
 def print_section_header(title: str):
     """Print a formatted section header"""
@@ -62,12 +62,44 @@ def display_tenants(manager):
                 month_year = f"{transfer.settlement_month}/{transfer.settlement_year}" if transfer.settlement_month and transfer.settlement_year else "N/A"
                 print(f"      • {format_currency(transfer.amount_pln):>15}  Date: {transfer.date}  Period: {month_year}")
 
+def display_info_about_settlement(manager: Manager, apartment_key: str, year: int, month: int):
+    apart_settlement = manager.get_settlement(apartment_key, year, month)
+    if apart_settlement is None:
+
+        return f"\nNie znaleziono mieszkania o kluczu '{apartment_key}' lub danych dla {month}/{year}."
+    
+    tenant_settlements = manager.create_tenants_settlements(apart_settlement)
+
+    print_section_header(f"RAPORT: {apartment_key.upper()}")
+    print(f"Okres: {month:02d}/{year}")
+    print(f"Suma kosztów: {format_currency(apart_settlement.total_due_pln)}")
+    print(f"Liczba osób: {len(tenant_settlements)}")
+    print("-" *70)
+
+    if tenant_settlements:
+        print(f"{'LOKATOR':<25} | {'DO ZAPŁATY':>15}")
+        print("-"*70)
+        for t in tenant_settlements:
+            print(f"{t.tenant:<25} | {format_currency(t.total_due_pln):>15}")
+    else:
+        print("Nie ma przypisanych lokatorów do tego mieszkania.")
+    
+    print("~" * 70)
+
 
 if __name__ == '__main__':
     parameters = Parameters()
     manager = Manager(parameters)
 
-    display_apartments(manager)
-    display_tenants(manager)
+    if len(sys.argv) == 4:
+            try:
+                apt_key = sys.argv[1]
+                year = int(sys.argv[2])
+                month = int(sys.argv[3])
+                display_info_about_settlement(manager, apt_key, year, month)
+
+            except ValueError:
+                print("\nBłąd: Rok i miesiąc muszą być liczbami całkowitymi.")
+    else:
+        print("\nZła liczba argumentów. Przykład: python main.py apart-polanka 2024 1")
     
-    print(f"\n{'=' * 70}\n")
